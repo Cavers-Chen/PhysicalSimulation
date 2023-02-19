@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <title>
+        AirflowSimulation
+    </title>
+    <style>
+
+    </style>
+</head>
+
+<body>
+
+    <canvas id="myCanvas" style="border: 2px solid"></canvas>
+
+    <script>
+        var canvas = document.getElementById("myCanvas");
+        var c = canvas.getContext("2d");
+        canvas.width = window.innerWidth - 20;
+	    canvas.height = window.innerHeight - 100;
+    
+        canvas.focus();
+
+        var simHeight = 1.1;	
+        var cScale = canvas.height / simHeight;
+        var simWidth = canvas.width / cScale;
+
+        var simHeight = 1.1;	
+        var cScale = canvas.height / simHeight;
+        var simWidth = canvas.width / cScale;
+
+        class Fluid{
+            constructor(density, numX, numY, h){
+                this.density = density;
+                this.numX = numX;
+                this.numY = numY;
+                this.numCells = this.numX * this.numY;
+                this.h = h;
+                this.u = new Float32Array(this.numCells);
+                this.v = new Float32Array(this.numCells);
+                this.newU = new Float32Array(this.numCells);
+                this.newV = new Float32Array(this.numCells);
+                this.p = new Float32Array(this.numCells);
+                this.s = new Float32Array(this.numCells);
+                this.m = new Float32Array(this.numCells);
+                this.newM = new Float32Array(this.numCells);
+                this.m.fill(1.0);
+                var num = numX * numY;
+            }
+
+            intergrate(dt, gravity){
+                var n = this.numY;
+                for(var i = 1; i < this.numX; i++){
+                    for(var j = 1; j < this.numY - 1; j++){
+                        if (this.s[i*n + j] != 0.0 && this.s[i*n + j - 1] != 0.0){
+                            this.v += gravity * dt;
+                        }
+                    }
+                }
+            }
+
+            solveIncompressibility(){
+                var n = this.numY;
+                var cp = this.density * this.h / dt;
+
+                for(var iter = 0; iter < numIters; iter++){
+
+                    for(var i = 1; i < this.numX - 1; i++){
+                        for(var j = 1; j < this.numY - 1; j++){
+                            var s = this.s[i*n + j];
+                            if(s == 0.0){
+                                continue;
+                            }
+                            var sx0 = this.s[(i-1)*n + j];
+                            var sx1 = this.s[(i+1)*n + j];
+                            var sy0 = this.s[i*n + j-1];
+                            var sy1 = this.s[i*n + j+1];
+                            s = sx0 + sx1 +sy0 + sy1;
+                            if(s == 0.0){
+                                continue;
+                            }
+                            
+                            var div = this.u[(i+1)*n + j] - this.u[i*n + j] + 
+							this.v[i*n + j+1] - this.v[i*n + j];
+
+						    var p = -div / s;
+
+                            p *= scene.overRelaxation;
+                            this.p[i*n + j] += cp * p;
+
+                            this.u[i*n + j] -= sx0 * p;
+                            this.u[(i+1)*n + j] += sx1 * p;
+                            this.v[i*n + j] -= sy0 * p;
+                            this.v[i*n + j+1] += sy1 * p;
+                        }
+                    }
+                    
+                }
+            }
+
+        }
+    
+    </script>
+</body>
+
+</html>
